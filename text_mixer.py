@@ -1,7 +1,18 @@
+import os
+import glob
+import sys
 import re
 import random
 from datetime import datetime
 from pathlib import Path
+
+# Absolute paths for environment stability
+BASE_DIR = Path(__file__).resolve().parent
+INPUT_DIR = BASE_DIR / "input"
+OUTPUT_DIR = BASE_DIR / "output"
+
+# Ensure output directory exists gracefully
+OUTPUT_DIR.mkdir(exist_ok=True)
 
 def mix_text(file_path, granularity):
     """
@@ -38,42 +49,28 @@ def mix_text(file_path, granularity):
 def main():
     print("=== Persistent Text Mixer (2026 Edition) ===")
     
-    # Using Path objects for directory management
-    base_dir = Path(__file__).parent
-    input_folder = base_dir / "input"
-    output_folder = base_dir / "outputs"
+    if not INPUT_DIR.exists():
+        INPUT_DIR.mkdir()
+        print(f"[*] Created '{INPUT_DIR.name}' folder. Please place your source files there.")
+
+    input_files = glob.glob(str(INPUT_DIR / "*.*"))
+    if not input_files:
+        print("[Error] No files found in input/ directory.")
+        sys.exit(1)
+    latest_file = max(input_files, key=os.path.getmtime)
+    input_path = Path(latest_file)
     
-    # Ensure folders exist
-    output_folder.mkdir(exist_ok=True)
-    if not input_folder.exists():
-        input_folder.mkdir()
-        print(f"[*] Created '{input_folder.name}' folder. Please place your source files there.")
+    print(f"[*] Drop-and-Go selected latest file: {input_path.name}")
 
     while True:
-        # 1. Get Filename Input
-        raw_input = input("\nEnter the filename (or 'q' to quit): ").strip()
-        
-        # Edge Case Refinement: Catch empty strings
-        if not raw_input:
-            continue
-            
-        if raw_input.lower() == 'q':
-            print("Exiting mixer. Goodbye!")
-            break
-
-        # Pathlib makes joining and checking existence very readable
-        input_path = input_folder / raw_input
-
-        # 2. Check if file exists and is a file
-        if not input_path.is_file():
-            print(f"[!] Error: '{raw_input}' not found in the '{input_folder.name}' directory.")
-            continue
-
-        # 3. Get and Validate Granularity Input
+        # 1. Get and Validate Granularity Input
         try:
-            g_input = input("Enter granularity (1-9): ").strip()
+            g_input = input("\nEnter granularity (1-9) or 'q' to quit: ").strip()
             if not g_input:
                 continue
+            if g_input.lower() == 'q':
+                print("Exiting mixer. Goodbye!")
+                break
             g = int(g_input)
             if not (1 <= g <= 9):
                 print("[!] Error: Granularity must be between 1 and 9.")
@@ -82,16 +79,15 @@ def main():
             print("[!] Error: Please enter a valid whole number for granularity.")
             continue
 
-        # 4. Process the Mix
+        # 2. Process the Mix
         time_str = datetime.now().strftime("%Y%m%d_%H%M")
         print(f"--- Mixing '{input_path.name}' with Granularity g={g} ---")
         
         mixed_result = mix_text(input_path, g)
 
         if mixed_result:
-            # Construct output filename using Path object features
             output_filename = f"mixed_g{g}_{time_str}_{input_path.name}"
-            output_path = output_folder / output_filename
+            output_path = OUTPUT_DIR / output_filename
             
             output_path.write_text(mixed_result, encoding='utf-8')
             
