@@ -5,6 +5,8 @@ import re
 import random
 from datetime import datetime
 from pathlib import Path
+from rich.console import Console
+console = Console()
 
 # Absolute paths for environment stability
 BASE_DIR = Path(__file__).resolve().parent
@@ -28,7 +30,7 @@ def mix_text(file_path, granularity):
         units = re.findall(pattern, content)
 
         if not units:
-            print(f"\n[!] No words found in {file_path.name}.")
+            console.print(f"\n[bold red][!] No words found in {file_path.name}.[/bold red]")
             return None
 
         # Partition into chunks of size 'g'
@@ -40,27 +42,27 @@ def mix_text(file_path, granularity):
         return "".join(chunks)
 
     except FileNotFoundError:
-        print(f"\n[!] Error: The file at {file_path} was not found.")
+        console.print(f"\n[bold red][!] Error: The file at {file_path} was not found.[/bold red]")
         return None
     except Exception as e:
-        print(f"\n[!] An unexpected error occurred: {e}")
+        console.print(f"\n[bold red][!] An unexpected error occurred: {e}[/bold red]")
         return None
 
 def main():
-    print("=== Persistent Text Mixer (2026 Edition) ===")
+    console.print("\n[bold magenta]=== Persistent Text Mixer (2026 Edition) ===[/bold magenta]")
     
     if not INPUT_DIR.exists():
         INPUT_DIR.mkdir()
-        print(f"[*] Created '{INPUT_DIR.name}' folder. Please place your source files there.")
+        console.print(f"[bold yellow][*] Created '{INPUT_DIR.name}' folder.[/bold yellow] Please place your source files there.")
 
     input_files = glob.glob(str(INPUT_DIR / "*.*"))
     if not input_files:
-        print("[Error] No files found in input/ directory.")
+        console.print("[bold red][!] Error: No files found in the 'input/' directory.[/bold red]")
         sys.exit(1)
     latest_file = max(input_files, key=os.path.getmtime)
     input_path = Path(latest_file)
     
-    print(f"[*] Drop-and-Go selected latest file: {input_path.name}")
+    console.print(f"[bold cyan][*] Drop-and-Go selected latest file:[/bold cyan] {input_path.name}")
 
     while True:
         # 1. Get and Validate Granularity Input
@@ -69,19 +71,19 @@ def main():
             if not g_input:
                 continue
             if g_input.lower() == 'q':
-                print("Exiting mixer. Goodbye!")
+                console.print("[bold magenta]Exiting mixer. Goodbye![/bold magenta]")
                 break
             g = int(g_input)
             if not (1 <= g <= 9):
-                print("[!] Error: Granularity must be between 1 and 9.")
+                console.print("[bold red][!] Error: Granularity must be between 1 and 9.[/bold red]")
                 continue
         except ValueError:
-            print("[!] Error: Please enter a valid whole number for granularity.")
+            console.print("[bold red][!] Error: Please enter a valid whole number for granularity.[/bold red]")
             continue
 
         # 2. Process the Mix
         time_str = datetime.now().strftime("%Y%m%d_%H%M")
-        print(f"--- Mixing '{input_path.name}' with Granularity g={g} ---")
+        console.print(f"\n[bold blue]--- Mixing '{input_path.name}' with Granularity g={g} ---[/bold blue]")
         
         mixed_result = mix_text(input_path, g)
 
@@ -91,10 +93,10 @@ def main():
             
             output_path.write_text(mixed_result, encoding='utf-8')
             
-            print(f"Success! Mixed version delivered to: {output_path}")
-            print("\n--- Preview ---")
-            print(mixed_result[:400] + "...")
-            print("--- End Preview ---")
+            console.print(f"[bold green]✓ Success![/bold green] Mixed version delivered to: [cyan]{output_path}[/cyan]")
+            console.print("\n[bold yellow]--- Preview ---[/bold yellow]")
+            console.print(mixed_result[:400] + "...")
+            console.print("[bold yellow]--- End Preview ---[/bold yellow]")
 
 if __name__ == "__main__":
     main()
